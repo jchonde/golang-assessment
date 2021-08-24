@@ -1,30 +1,46 @@
 package main
 
 import (
-	"io"
+	"context"
+	"fmt"
+	"go-assesment/handlers"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 )
 
-func FindHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
+func setupContext() context.Context {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
 
-	io.WriteString(w, `{"foo": "bar"}`)
+	go func() {
+		select {
+		case <-c:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return ctx
 }
-
-func CompareHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-
-	io.WriteString(w, `{"bar": "foo"}`)
-}
-
 func main() {
-	http.HandleFunc("/find", FindHandler)
-	http.HandleFunc("/compare", CompareHandler)
-	err := http.ListenAndServe(":3001", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
+	ctx := setupContext()
+	http.HandleFunc("/find", handlers.FindHandler)
+	http.HandleFunc("/compare", handlers.CompareHandler)
+	http.HandleFunc("/list", handlers.ListHandler)
+	http.HandleFunc("/add", handlers.AddHandler)
+	http.HandleFunc("/remove", handlers.RemoveHandler)
+	http.HandleFunc("/find-longest", handlers.FindLongestHandler)
+
+	go (func() {
+		err := http.ListenAndServe(":3001", nil)
+		if err != nil {
+			log.Fatal("ListenAndServe: ", err)
+		}
+	})()
+
+	<-ctx.Done()
+	fmt.Println("context canceled, terminating")
 }
