@@ -2,17 +2,16 @@ package controllers
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"reflect"
 	"strings"
 )
 
-func CompareController(w http.ResponseWriter, word1 string, word2 string) {
+func CompareController(word1 string, word2 string) (string, error) {
 	file, err := os.Open("word-list/en.txt")
 	if err != nil {
 		fmt.Println(err)
+		return "", err
 	}
 	defer file.Close()
 
@@ -28,13 +27,17 @@ func CompareController(w http.ResponseWriter, word1 string, word2 string) {
 	for i := 0; i < len(word2); i++ {
 		word2AsArrayNums[int(word2[i])-int('a')]++
 	}
+
+	solution := ""
 	if strings.Compare(word1, word2) == 0 {
-		io.WriteString(w, "They are the same\n")
+		solution = "They are the same\n"
 
 	} else if len(word1) == len(word2) && reflect.DeepEqual(word1AsArrayNums, word2AsArrayNums) && strings.Compare(word1, word2) != 0 {
-		io.WriteString(w, "They are anagrams\n")
+		solution = "They are anagrams\n"
 	} else {
-		io.WriteString(w, "They are NOT anagrams\n")
+		solution = "They are NOT anagrams\n"
 	}
+
+	return solution, err
 
 }

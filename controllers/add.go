@@ -5,14 +5,18 @@ import (
 	"os"
 )
 
-func AddController(word string) {
+func AddController(word string) (bool, error) {
 	file, err := os.OpenFile("word-list/en.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		fmt.Println(err)
+		return false, err
 	}
 	defer file.Close()
 
 	if _, err = file.WriteString("\n" + word); err != nil {
 		fmt.Println(err)
+		return false, err
 	}
+
+	return true, err
 }

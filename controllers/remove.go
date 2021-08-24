@@ -9,21 +9,21 @@ import (
 	"time"
 )
 
-func check(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func RemoveController(word string) {
+func RemoveController(word string) (string, error) {
 
 	file, err := os.Open("word-list/en.txt")
 	dstFilePath := "word-list/en_copy"
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+		return "error", err
+	}
 	defer file.Close()
 
 	dst, err := os.Create(dstFilePath)
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+		return "error", err
+	}
 	defer dst.Close()
 
 	scanner := bufio.NewScanner(file)
@@ -31,14 +31,15 @@ func RemoveController(word string) {
 	for scanner.Scan() {
 
 		if contains(word, scanner.Text()) {
-			fmt.Printf("word %s found, skipping write\n", scanner.Text())
 			time.Sleep(1 * time.Second)
-
 			continue
 		}
 
 		_, err = fmt.Fprintln(dst, scanner.Text())
-		check(err)
+		if err != nil {
+			log.Fatal(err)
+			return "error", err
+		}
 
 	}
 
@@ -49,13 +50,19 @@ func RemoveController(word string) {
 	//delete the original file last, so that we can rollback ??
 	file.Close()
 	err = os.Remove("word-list/en.txt")
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+		return "error", err
+	}
 
 	dst.Close()
 	err = os.Rename(dstFilePath, "word-list/en.txt")
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+		return "error", err
+	}
 
-	fmt.Println("completed")
+	return "completed", err
 
 }
 
